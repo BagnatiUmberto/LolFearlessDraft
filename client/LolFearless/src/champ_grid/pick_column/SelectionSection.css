@@ -1,0 +1,6 @@
+.selected-champ-icon-wrapper{
+    height: 80px;
+    width: 80px;
+    border-radius: 50%;
+    max-width: none;
+}

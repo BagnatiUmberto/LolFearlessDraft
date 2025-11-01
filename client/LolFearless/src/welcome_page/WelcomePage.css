@@ -1,0 +1,8 @@
+
+#red-wrapper{
+    border: 3px solid red;
+}
+
+#blue-wrapper{
+    border: 3px solid rgb(0, 85, 255);
+}

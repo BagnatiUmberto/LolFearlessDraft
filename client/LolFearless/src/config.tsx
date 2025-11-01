@@ -1,0 +1,1 @@
+export const CHAMP_ICONS_URL = "https://ddragon.leagueoflegends.com/cdn/15.21.1/img/champion/";
