@@ -14,7 +14,7 @@ function App() {
   return (
     <div id="app">
       <Header />
-      <main className="main-content">
+      <main className="main-content is-flex is-flex-direction-column">
         <Routes>
           <Route path="/" element={<WelcomePage />} />
           <Route path="/settings" element={<Settings />} />

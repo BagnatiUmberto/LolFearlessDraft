@@ -39,7 +39,7 @@ function startTimer(model) {
       model.nextPhase()
     }
     sendModel(model, model.roomId)//sendModel(model,roomId) from app.js
-  }, 100);
+  }, 1000);
 }
 
 /* ///////////////// SOCKET CALLBACK FUNCTIONS /////////////////*/
@@ -57,17 +57,36 @@ async function joinRoom(socket, data) {
   const roomId = data.roomId
   const team = data.team
 
-  if (!rooms[roomId]) return socket.emit("roomError", "Room non esiste")
+  if (!rooms[roomId]) {
+    console.log("Room Error")
+    socket.emit("roomError")
+    return
+  }
+
+  console.log(`Room ID: ${roomId}`)
   const room = rooms[roomId]
 
-  if (Object.keys(room.players).length >= 2)
-    return socket.emit("roomFull")
+  // Check room full
+  if (Object.keys(room.players).length >= 2) {
+    console.log("Room Full")
+    socket.emit("roomFull")
+    return
+  }
 
+  // Check team not already joined
+  if (Object.keys(room.players).length === 1 && room.players[team]) {
+    console.log(`Team ${team} already joined`)
+    socket.emit("alreadyJoined")
+    return
+  }
+
+  //Accept the team joining the room
   socket.join(roomId)
   room.players[team] = socket.id
   if (!room.model) {
     room.model = new Model(roomId, champsList)
   }
+
   socket.data.team = team
   socket.data.roomId = roomId
   sendModel(room.model, roomId)
@@ -94,6 +113,7 @@ function champSelected(data) {
   const selectedChamp = data.selectedChamp
   const roomId = data.roomId
   const model = rooms[roomId].model
+  console.log(selectedChamp)
   //prevent Spam
   if (!model.teamHasPicked && model.activeTeam === team && (model.phaseType === "pick" || model.phaseType === "ban")) {
     model.teamHasPicked = true
@@ -112,10 +132,13 @@ function sendModel(model, roomId) {
 function disconnected(socket) {
   console.log("Disconnessione:", socket.id)
   const { roomId, team } = socket.data
+  const room = rooms[roomId]
+
   if (roomId && team && rooms[roomId]) {
-    delete rooms[roomId].players[team]
-    delete rooms[roomId].model
-    delete rooms[roomId]
+    delete room.players[team]
+    if (Object.keys(room.players).length === 0) {
+      delete rooms[roomId]
+    }
     console.log("Deleted room: " + roomId)
   }
 }
@@ -150,6 +173,7 @@ SOCKET MANAGMENT
 io.on("connection", (socket) => {
   console.log("🔌 Nuova connessione:", socket.id)
 
+
   // Creazione della room
   socket.on("createRoom", () => { createRoom(socket) })
 
@@ -162,7 +186,7 @@ io.on("connection", (socket) => {
   socket.on("champSelected", (data) => { champSelected(data) })
 
   //Player disconnected
-  socket.on("disconnected", () => { disconnected(socket) })
+  socket.on("disconnect", () => { disconnected(socket) })
 })
 
 server.listen(3001, () => {

@@ -19,7 +19,15 @@ library.add(faCopy, faArrowUpRightFromSquare);
 
 function WelcomePage() {
     const [roomId, setRoomId] = useState<string>("")
-    const [links, setLinks] = useState<Links>({ red: "", blue: "" });
+    const [links, setLinks] = useState<Links>({ red: "", blue: "" })
+
+    /*
+    ――――――――――――――――――――――――――――――――――――――――――――――
+    ――――――――――――――――――――――――――――――――――――――――――――――
+    LISTENERS FUNCTIONS
+    ――――――――――――――――――――――――――――――――――――――――――――――
+    ――――――――――――――――――――――――――――――――――――――――――――――
+    */
 
     const cmdCreateRoom = () => {
         console.log("On Connect")
@@ -27,7 +35,8 @@ function WelcomePage() {
     }
 
     const onRoomCreated = (id: string) => {
-        setRoomId(id);
+        setRoomId(id)
+        console.log(id)
         const baseUrl = window.location.origin;
         setLinks({
             blue: `${baseUrl}/room/${id}?team=blue`,
@@ -35,17 +44,21 @@ function WelcomePage() {
         });
     }
 
+    /*
+    ――――――――――――――――――――――――――――――――――――――――――――――
+    ――――――――――――――――――――――――――――――――――――――――――――――
+    ON PAGE LOAD
+    ――――――――――――――――――――――――――――――――――――――――――――――
+    ――――――――――――――――――――――――――――――――――――――――――――――
+    */
     useEffect(() => {
         console.log("Use effect")
-        if (!socket.connected) {
-            socket.on("connect", cmdCreateRoom)
-        } else {
-            cmdCreateRoom()
-        }
+        socket.on("connect", cmdCreateRoom)
 
         socket.on("roomCreated", onRoomCreated)
 
         return (() => {
+            console.log("Socket closed Wlcome page")
             socket.off("connect", cmdCreateRoom)
             socket.off("roomCreated", onRoomCreated)
         })
@@ -68,7 +81,7 @@ function WelcomePage() {
                         <input id="red-link-input" className=" input is-info" type="text" value={links.red} placeholder={links.red} readOnly={true} />
                     </div>
                     <div className="column is-1 is-flex is-justify-content-center is-align-items-center">
-                        <Link to={`/room/${roomId}?team=red`} target="_blank">
+                        <Link to={`/room/${roomId}/?team=red`} target="_blank">
                             <button>
                                 <FontAwesomeIcon icon="arrow-up-right-from-square" />
                             </button>

@@ -26,12 +26,12 @@ class Model {
         }
         // timer related
         this.timer = null
-        this.turnTime = 0
+        this.turnTime = 30
         this.remainingTime = this.timer
 
         // game phase related
         this.activePhase = 0
-        this.phaseType = "wait" //wait, ban, pick, end
+        this.phaseType = "wait" //wait, ban, pick
         this.activeTeam = null
         this.teamHasPicked = false
         this.phases = [
@@ -109,8 +109,6 @@ class Model {
 
     setSelectedChamp(selectedChamp) {
         let key = ""
-        console.log(this.activePhase)
-        console.log(this.phaseType)
         if (this.phaseType === "ban") {
             key = "bannedChamps"
         }
@@ -135,6 +133,7 @@ class Model {
         this.setPhaseType()
         this.setActiveTeam()
         if (this.phaseType == "ban" || this.phaseType == "pick") {
+            this.teamHasPicked = false
             this.remainingTime = this.turnTime
         }
 
