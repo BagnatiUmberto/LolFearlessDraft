@@ -24,9 +24,8 @@ function ChampGridView() {
 
   const [selectedChamp, setSelectedChamp] = useState<string>("none");
   const [playerReady, setPlayerReady] = useState<boolean>(false)
-  const [amActivePlayer, setAmActivePlayer] = useState<boolean>(false)
 
-  const [selectBtnnDisabled, setSelectBtnDisabled] = useState<boolean>(false)
+  const [selectBtnDisabled, setSelectBtnDisabled] = useState<boolean>(false)
 
   const [searchParams] = useSearchParams();
   const { roomId } = useParams();
@@ -45,40 +44,43 @@ function ChampGridView() {
 
   // Manage the select button disable status
   useEffect(() => {
+    const amActivePlayer = team === activeTeam ? true : false
     console.log(`Selected champ ${selectedChamp}`)
+    console.log(`Am I active: ${amActivePlayer}`)
+    console.log(`Game phase: ${gamePhase}`)
+    console.log(`Player ready: ${playerReady}`)
+
     if (gamePhase === "wait") {
-      setSelectBtnDisabled(playerReady);
+      setSelectBtnDisabled(playerReady)
     } else {
-      setSelectBtnDisabled(!amActivePlayer || amActivePlayer && selectedChamp === "none");
+      setSelectBtnDisabled(!amActivePlayer || amActivePlayer && selectedChamp === "none")
     }
-  }, [gamePhase, amActivePlayer, playerReady, selectedChamp])
+  }, [gamePhase, playerReady, selectedChamp])
 
   //Socket.IO states
   useEffect(() => {
     if (!roomId || !team) return;
     socket.emit("joinRoom", { roomId, team });
 
-    socket.on("playerJoined", (data) => {
-      console.log("Altro giocatore entrato:", data);
-    });
-
     socket.on("modelUpdate", (model) => {
       console.log("Update Model")
       console.log(model)
-      setRedBanned(model.redTeam.bannedChamps)
-      setBlueBanned(model.blueTeam.bannedChamps)
-      setRedPicked(model.redTeam.pickedChamps)
-      setBluePicked(model.blueTeam.pickedChamps)
+      setRedBanned(model.red.bannedChamps)
+      setBlueBanned(model.blue.bannedChamps)
+      setRedPicked(model.red.pickedChamps)
+      setBluePicked(model.blue.pickedChamps)
       if (availableChamps.length === 0) {
         setAvailableChamps(model.match.availableChamps)
       }
       setRemovedChamps(model.match.removedChamps)
-      setActiveTeam(model.game.activePlayer)
-      setTimer(model.game.remainingTime)
-      setGamePhase(model.game.phaseType)
-      setAmActivePlayer(model.game.activePlayer === team ? true : false)
+      setActiveTeam(model.activeTeam)
+      setTimer(model.remainingTime)
+      console.log(`current game: ${model.match.currentGame}`)
+      if (model.phaseType == "wait" && model.match.currentGame > 0) {
+        setPlayerReady(false)
+      }
+      setGamePhase(model.phaseType)
     })
-
 
     return (() => {
       socket.emit("disconnected")
@@ -130,7 +132,7 @@ function ChampGridView() {
 
         <div className="has-text-centered">
           <button id="lockin-btn"
-            disabled={selectBtnnDisabled}
+            disabled={selectBtnDisabled}
             onClick={selectBtnClickHandle}>
             {gamePhase === "wait" ? "READY" : "LOCK IN"}
           </button>

@@ -3,37 +3,7 @@ import express from "express"
 import http from "http"
 import { randomUUID } from "crypto"
 
-import Game from "./Game.js"
-
-
-/*
-――――――――――――――――――――――――――――――――――――――――――――――
-――――――――――――――――――――――――――――――――――――――――――――――
-CLASSES DECLARATION
-――――――――――――――――――――――――――――――――――――――――――――――
-――――――――――――――――――――――――――――――――――――――――――――――
-*/
-class Model {
-  constructor() {
-    this.match = {
-      numberOfGames: 3,
-      currentRound: 1,
-      availableChamps: [],
-      removedChamps: []
-    }
-    this.game = new Game(),
-      this.redTeam = {
-        teamName: "Red team",
-        bannedChamps: ["", "", "", "", ""],
-        pickedChamps: ["", "", "", "", ""]
-      }
-    this.blueTeam = {
-      teamName: "Blue team",
-      bannedChamps: ["", "", "", "", ""],
-      pickedChamps: ["", "", "", "", ""]
-    }
-  }
-}
+import Model from "./Model.js"
 
 /*
 ――――――――――――――――――――――――――――――――――――――――――――――
@@ -55,19 +25,21 @@ const getChampListAPI = async () => {
   return champs_arr
 }
 
-function startTimer(model, roomId) {
-  if (model.timer) clearInterval(model.timer);
+
+function startTimer(model) {
+  if (model.timer) {
+    clearInterval(model.timer)
+  }
 
   model.timer = setInterval(() => {
-    const game = model.game;
-    if (game.remainingTime > 0) {
-      game.remainingTime--;
+    if (model.remainingTime > 0) {
+      model.remainingTime--;
     } else {
-      model.game.setSelectedChamp(model, model.game.activePlayer, "none")
-      game.nextPhase();
+      model.setSelectedChamp("none")
+      model.nextPhase()
     }
-    sendModel(model, roomId);
-  }, 1000);
+    sendModel(model, model.roomId)//sendModel(model,roomId) from app.js
+  }, 100);
 }
 
 /* ///////////////// SOCKET CALLBACK FUNCTIONS /////////////////*/
@@ -75,9 +47,7 @@ function createRoom(socket) {
   const roomId = randomUUID()
   rooms[roomId] = {
     players: {},
-    ready: {},
     model: null,
-    timer: null
   }
   socket.emit("roomCreated", roomId)
 }
@@ -95,10 +65,8 @@ async function joinRoom(socket, data) {
 
   socket.join(roomId)
   room.players[team] = socket.id
-  room.ready[team] = false
   if (!room.model) {
-    room.model = new Model()
-    room.model.match.availableChamps = await getChampListAPI()
+    room.model = new Model(roomId, champsList)
   }
   socket.data.team = team
   socket.data.roomId = roomId
@@ -107,35 +75,35 @@ async function joinRoom(socket, data) {
 
 function playerReady(socket) {
   const { roomId, team } = socket.data
-  if (!roomId || !team) return
-
+  if (!roomId || !team) {
+    return
+  }
+  let model = rooms[roomId].model
   console.log(`Player ready: ${team}`)
-  rooms[roomId].ready[team] = true
+  model.setPlayerReady(team)
 
   // Controlla se entrambi sono ready e starta la partita
-  const readyStatus = Object.values(rooms[roomId].ready)
-  if (readyStatus.every(Boolean) && readyStatus.length === 2) {
-    let room = rooms[roomId]
-    room.model.game.nextPhase()
-    sendModel(room.model, roomId)
-    startTimer(room.model, roomId)
+  if (model.arePlayersReady()) {
+    model.nextPhase()
+    startTimer(model)
   }
 }
 
-function champSelected(socket, data) {
+function champSelected(data) {
   const team = data.team
   const selectedChamp = data.selectedChamp
   const roomId = data.roomId
-  const room = rooms[roomId]
-  const model = room.model
-
-  model.match.removedChamps.push(selectedChamp)
-
-  model.game.setSelectedChamp(model, team, selectedChamp)
-  console.log(model)
-  model.game.nextPhase()
-  startTimer(room.model, roomId)
+  const model = rooms[roomId].model
+  //prevent Spam
+  if (!model.teamHasPicked && model.activeTeam === team && (model.phaseType === "pick" || model.phaseType === "ban")) {
+    model.teamHasPicked = true
+    model.match.removedChamps.push(selectedChamp)
+    model.setSelectedChamp(selectedChamp)
+    model.nextPhase()
+    startTimer(model)
+  }
 }
+
 
 function sendModel(model, roomId) {
   io.to(roomId).emit("modelUpdate", model)
@@ -146,7 +114,7 @@ function disconnected(socket) {
   const { roomId, team } = socket.data
   if (roomId && team && rooms[roomId]) {
     delete rooms[roomId].players[team]
-    delete rooms[roomId].ready[team]
+    delete rooms[roomId].model
     delete rooms[roomId]
     console.log("Deleted room: " + roomId)
   }
@@ -169,6 +137,7 @@ const io = new Server(server, {
 })
 
 const rooms = {} // memorizza lo stato delle room
+const champsList = await getChampListAPI()
 
 
 /*
@@ -190,7 +159,7 @@ io.on("connection", (socket) => {
   // Ready
   socket.on("playerReady", () => { playerReady(socket) })
 
-  socket.on("champSelected", (data) => { champSelected(socket, data) })
+  socket.on("champSelected", (data) => { champSelected(data) })
 
   //Player disconnected
   socket.on("disconnected", () => { disconnected(socket) })
