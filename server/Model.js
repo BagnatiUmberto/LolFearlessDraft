@@ -27,7 +27,7 @@ class Model {
         // timer related
         this.timer = null
         this.turnTime = 30
-        this.remainingTime = this.timer
+        this.remainingTime = this.turnTime
 
         // game phase related
         this.activePhase = 0
@@ -59,6 +59,7 @@ class Model {
         ]
     }
 
+
     setPlayerReady(team) {
         if (team == "red") {
             this.red.isReady = true
@@ -66,12 +67,6 @@ class Model {
         if (team == "blue") {
             this.blue.isReady = true
         }
-    }
-
-    arePlayersReady() {
-        if (this.red.isReady && this.blue.isReady)
-            return true
-        return false
     }
 
     setPhaseType() {
@@ -120,6 +115,30 @@ class Model {
             this[this.activeTeam][key][firstFree] = selectedChamp
             this.teamHasPicked = true //reset in nextPhase()
         }
+    }
+
+    arePlayersReady() {
+        if (this.red.isReady && this.blue.isReady)
+            return true
+        return false
+    }
+
+    // Avoid the circular reference of timer obj
+    getSafeModel() {
+        return {
+            roomId: this.roomId,
+            match: this.match,
+            red: this.red,
+            blue: this.blue,
+            turnTime: this.turnTime,
+            remainingTime: this.remainingTime,
+            activePhase: this.activePhase,
+            phaseType: this.phaseType,
+            activeTeam: this.activeTeam,
+            teamHasPicked: this.teamHasPicked,
+            phase: this.phases
+        }
+
     }
 
 

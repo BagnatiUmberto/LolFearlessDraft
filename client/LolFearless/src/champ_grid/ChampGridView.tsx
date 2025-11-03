@@ -11,18 +11,64 @@ import champ_sel_sound from "../assets/sound/champ_selected.mp3";
 
 import { socket } from "../socket";
 
+type Match = {
+  numberOfGames: number
+  currentGame: number
+  availableChamps: string[]
+  removedChamps: string[]
+}
+
+type Team = {
+  teamName: string
+  isReady: boolean
+  bannedChamps: string[]
+  pickedChamps: string[]
+
+}
+
+type Model = {
+  roomId: string
+  match: Match
+  blue: Team
+  red: Team
+  turnTime: number
+  remainingTime: number
+  activePhase: number
+  phaseType: string
+  activeTeam: string | null
+  teamHasPicked: boolean
+  phases: string[]
+}
 
 function ChampGridView() {
-  const [blueBanned, setBlueBanned] = useState<string[]>(["", "", "", "", ""])
-  const [redBanned, setRedBanned] = useState<string[]>(["", "", "", "", ""])
-  const [bluePicked, setBluePicked] = useState<string[]>(["", "", "", "", ""])
-  const [redPicked, setRedPicked] = useState<string[]>(["", "", "", "", ""])
-
-  const [availableChamps, setAvailableChamps] = useState<string[]>([])
-  const [removedChamps, setRemovedChamps] = useState<string[]>([])
-  const [gamePhase, setGamePhase] = useState<string>("")
-  const [timer, setTimer] = useState<number>(30)
-  const [activeTeam, setActiveTeam] = useState<string>("blue")
+  const [model, setModel] = useState<Model>({
+    roomId: "",
+    match: {
+      numberOfGames: 3,
+      currentGame: 0,
+      availableChamps: [],
+      removedChamps: []
+    },
+    blue: {
+      teamName: "",
+      isReady: false,
+      bannedChamps: [],
+      pickedChamps: []
+    },
+    red: {
+      teamName: "",
+      isReady: false,
+      bannedChamps: [],
+      pickedChamps: []
+    },
+    turnTime: 30,
+    remainingTime: 30,
+    activePhase: 0,
+    phaseType: "",
+    activeTeam: "",
+    teamHasPicked: false,
+    phases: []
+  })
 
   const [selectedChamp, setSelectedChamp] = useState<string>("none");
   const [playerReady, setPlayerReady] = useState<boolean>(false)
@@ -40,7 +86,7 @@ function ChampGridView() {
   const baseUrl = window.location.origin;
 
   const selectBtnClickHandle = () => {
-    if (gamePhase === "wait") {
+    if (model.phaseType === "wait") {
       setPlayerReady(true)
       socket.emit("playerReady")
       new Audio(start_sound).play()
@@ -48,19 +94,20 @@ function ChampGridView() {
     else {
       console.log("Sent selected champ" + selectedChamp)
       socket.emit("champSelected", { roomId, selectedChamp, team })
+      setSelectedChamp("none")
       new Audio(champ_sel_sound).play()
     }
   }
 
   // Manage the select button disable status
   useEffect(() => {
-    const amActivePlayer = team === activeTeam ? true : false
-    if (gamePhase === "wait") {
+    const amActivePlayer = team === model.activeTeam ? true : false
+    if (model.phaseType === "wait") {
       setSelectBtnDisabled(playerReady)
     } else {
       setSelectBtnDisabled(!amActivePlayer || amActivePlayer && selectedChamp === "none")
     }
-  }, [gamePhase, playerReady, selectedChamp])
+  }, [model, playerReady, selectedChamp])
 
   /*
   ――――――――――――――――――――――――――――――――――――――――――――――
@@ -89,24 +136,14 @@ function ChampGridView() {
       setRoomError(true)
     })
 
-    socket.on("modelUpdate", (model) => {
+    socket.on("modelUpdate", (_model) => {
       console.log("Update Model")
-      console.log(model)
-      setRedBanned(model.red.bannedChamps)
-      setBlueBanned(model.blue.bannedChamps)
-      setRedPicked(model.red.pickedChamps)
-      setBluePicked(model.blue.pickedChamps)
-      if (availableChamps.length === 0) {
-        setAvailableChamps(model.match.availableChamps)
-      }
-      setRemovedChamps(model.match.removedChamps)
-      setActiveTeam(model.activeTeam)
-      setTimer(model.remainingTime)
+      console.log(_model)
+      setModel(_model)
       // New Game reset
-      if (model.phaseType == "wait" && model.match.currentGame > 0) {
+      if (_model.phaseType == "wait" && _model.match.currentGame > 0) {
         setPlayerReady(false)
       }
-      setGamePhase(model.phaseType)
     })
 
     return (() => {
@@ -134,7 +171,7 @@ function ChampGridView() {
           <div className="columns is-vcentered">
             <div id="role-filter" className="column is-4"></div>
             <div id="timer-container" className="column is-4 has-text-centered">
-              <h1 className={`is-size-4 ${activeTeam === "blue" ? "bg-blue" : "bg-red"}`}>{gamePhase === "ban" || gamePhase === "pick" ? timer : ""}</h1>
+              <h1 className={`is-size-4 ${model.activeTeam === "blue" ? "bg-blue" : "bg-red"}`}>{model.phaseType === "ban" || model.phaseType === "pick" ? model.remainingTime : ""}</h1>
             </div>
             <div id="search-input-container" className="column is-4 has-text-right">
               <input id="search-input" placeholder="Search" type="text" />
@@ -144,15 +181,15 @@ function ChampGridView() {
           <div className="columns is-flex-1">
             <div id="hero-column" className="column is-3 is-flex is-flex-1 is-flex-direction-column">
               <h2>Your Team</h2>
-              <BanSection teamSide={team} champList={team === "blue" ? blueBanned : redBanned} />
-              <SelectionSection teamSide={team} champList={team === "blue" ? bluePicked : redPicked} />
-
+              <BanSection teamSide={team} champList={team === "blue" ? model.blue.bannedChamps : model.red.bannedChamps} />
+              <SelectionSection teamSide={team} champList={team === "blue" ? model.blue.pickedChamps : model.red.pickedChamps} />
             </div>
 
             <div className="column is-6">
               <ChampGrid
-                availableChamps={availableChamps}
-                removedChamps={removedChamps}
+                availableChamps={model.match.availableChamps}
+                removedChamps={model.match.removedChamps}
+                bannedChamps={model.red.bannedChamps.concat(model.blue.bannedChamps)}
                 preSelectedId={selectedChamp}
                 onClickHandle={(champ) => setSelectedChamp(champ)}
               />
@@ -161,8 +198,8 @@ function ChampGridView() {
 
             <div id="opponent-column" className="column is-3 is-flex is-flex-1 is-flex-direction-column">
               <h2>Enemy Team</h2>
-              <BanSection teamSide={team === "blue" ? "red" : "blue"} champList={team === "blue" ? redBanned : blueBanned} />
-              <SelectionSection teamSide={team === "blue" ? "red" : "blue"} champList={team === "blue" ? redPicked : bluePicked} />
+              <BanSection teamSide={team === "blue" ? "red" : "blue"} champList={team === "blue" ? model.red.bannedChamps : model.blue.bannedChamps} />
+              <SelectionSection teamSide={team === "blue" ? "red" : "blue"} champList={team === "blue" ? model.red.pickedChamps : model.blue.pickedChamps} />
             </div>
 
           </div>
@@ -171,7 +208,7 @@ function ChampGridView() {
             <button id="lockin-btn"
               disabled={selectBtnDisabled}
               onClick={selectBtnClickHandle}>
-              {gamePhase === "wait" ? "READY" : "LOCK IN"}
+              {model.phaseType === "wait" ? "READY" : "LOCK IN"}
             </button>
           </div>
 

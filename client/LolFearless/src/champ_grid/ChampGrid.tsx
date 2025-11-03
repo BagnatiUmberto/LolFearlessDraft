@@ -5,20 +5,22 @@ import "./ChampGrid.css";
 type Props = {
   availableChamps: string[]
   removedChamps: string[]
+  bannedChamps: string[]
   preSelectedId: string | null
   onClickHandle: (champ: string) => void
 };
 
-function ChampGrid({ availableChamps, removedChamps, preSelectedId, onClickHandle }: Props) {
+function ChampGrid({ availableChamps, removedChamps, bannedChamps, preSelectedId, onClickHandle }: Props) {
   const imgs_url = "https://ddragon.leagueoflegends.com/cdn/15.21.1/img/champion/";
 
   return (
     <>
       <div className="grid">
         {availableChamps.map((champ) => (
-          <div
+          <button
             key={champ}
-            className={`${removedChamps.includes(champ) ? "champ-card-removed" : "champ-card"} ${preSelectedId === champ ? "selected" : ""
+            disabled={removedChamps.includes(champ) || bannedChamps.includes(champ) ? true : false}
+            className={`${removedChamps.includes(champ) || bannedChamps.includes(champ) ? "champ-card-removed" : "champ-card"} ${preSelectedId === champ ? "selected" : ""
               }`}
             onClick={() => {
               onClickHandle(champ);
@@ -39,7 +41,7 @@ function ChampGrid({ availableChamps, removedChamps, preSelectedId, onClickHandl
             </div>
 
             <p className="has-text-centered">{champ}</p>
-          </div>
+          </button>
         ))}
       </div>
     </>

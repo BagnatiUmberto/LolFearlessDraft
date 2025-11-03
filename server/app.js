@@ -82,6 +82,7 @@ async function joinRoom(socket, data) {
 
   //Accept the team joining the room
   socket.join(roomId)
+  console.log(io.sockets.adapter.rooms)
   room.players[team] = socket.id
   if (!room.model) {
     room.model = new Model(roomId, champsList)
@@ -114,10 +115,22 @@ function champSelected(data) {
   const roomId = data.roomId
   const model = rooms[roomId].model
   console.log(selectedChamp)
+
+  const alreadyPicked = model.match.removedChamps.includes(selectedChamp) ||
+    model.red.bannedChamps.includes(selectedChamp) || model.red.pickedChamps.includes(selectedChamp) ||
+    model.blue.bannedChamps.includes(selectedChamp) || model.blue.pickedChamps.includes(selectedChamp)
+
+  if (alreadyPicked) {
+    console.log("Champ already picked")
+    return
+  }
+
   //prevent Spam
   if (!model.teamHasPicked && model.activeTeam === team && (model.phaseType === "pick" || model.phaseType === "ban")) {
     model.teamHasPicked = true
-    model.match.removedChamps.push(selectedChamp)
+    if (model.phaseType === "pick") {
+      model.match.removedChamps.push(selectedChamp)
+    }
     model.setSelectedChamp(selectedChamp)
     model.nextPhase()
     startTimer(model)
@@ -126,7 +139,7 @@ function champSelected(data) {
 
 
 function sendModel(model, roomId) {
-  io.to(roomId).emit("modelUpdate", model)
+  io.to(roomId).emit("modelUpdate", model.getSafeModel())
 }
 
 function disconnected(socket) {
@@ -136,10 +149,13 @@ function disconnected(socket) {
 
   if (roomId && team && rooms[roomId]) {
     delete room.players[team]
+    console.log(`Deleted player socket ${socket.id}`)
     if (Object.keys(room.players).length === 0) {
       delete rooms[roomId]
+      socket.leave(roomId)
+      console.log("Deleted room: " + roomId)
     }
-    console.log("Deleted room: " + roomId)
+
   }
 }
 
