@@ -44,6 +44,7 @@ function startTimer(model) {
 
 /* ///////////////// SOCKET CALLBACK FUNCTIONS /////////////////*/
 function createRoom(socket) {
+  console.log("Room created")
   const roomId = randomUUID()
   rooms[roomId] = {
     players: {},
@@ -82,7 +83,6 @@ async function joinRoom(socket, data) {
 
   //Accept the team joining the room
   socket.join(roomId)
-  console.log(io.sockets.adapter.rooms)
   room.players[team] = socket.id
   if (!room.model) {
     room.model = new Model(roomId, champsList)
@@ -142,6 +142,7 @@ function sendModel(model, roomId) {
   io.to(roomId).emit("modelUpdate", model.getSafeModel())
 }
 
+
 function disconnected(socket) {
   console.log("Disconnessione:", socket.id)
   const { roomId, team } = socket.data
@@ -149,10 +150,10 @@ function disconnected(socket) {
 
   if (roomId && team && rooms[roomId]) {
     delete room.players[team]
+    socket.leave(roomId)
     console.log(`Deleted player socket ${socket.id}`)
     if (Object.keys(room.players).length === 0) {
       delete rooms[roomId]
-      socket.leave(roomId)
       console.log("Deleted room: " + roomId)
     }
 
@@ -200,6 +201,8 @@ io.on("connection", (socket) => {
   socket.on("playerReady", () => { playerReady(socket) })
 
   socket.on("champSelected", (data) => { champSelected(data) })
+
+  socket.on("leavingChampSelect", () => { disconnected(socket) })
 
   //Player disconnected
   socket.on("disconnect", () => { disconnected(socket) })

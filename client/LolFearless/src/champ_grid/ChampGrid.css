@@ -1,23 +1,22 @@
-.grid {
-    display: flex;
-    flex-wrap: wrap;
-    max-height: 500px;
+.champ-grid {
     overflow-y: scroll;
+    gap: 1rem;
+    background-color: #000000b4;
 }
 
 /* scroll bar styling */
-.grid::-webkit-scrollbar-track {
+.champ-grid::-webkit-scrollbar-track {
     -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
     border-radius: 10px;
     background-color: #f5f5f500;
 }
 
-.grid::-webkit-scrollbar {
+.champ-grid::-webkit-scrollbar {
     width: 10px;
     background-color: #f5f5f500;
 }
 
-.grid::-webkit-scrollbar-thumb {
+.champ-grid::-webkit-scrollbar-thumb {
     border-radius: 10px;
     -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, .3);
     background-color: #eac13b;
@@ -27,6 +26,7 @@
 
 .champ-card {
     width: 100px;
+    height: 100px;
     padding: 10px 0;
     margin: 5px 13px;
     color: rgb(255, 255, 255);

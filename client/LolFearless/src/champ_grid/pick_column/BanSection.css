@@ -1,5 +1,35 @@
+.banned-icon-wrapper{
+    position: relative;
+    width: 60px;
+    height: 60px;
+    border: 4px solid transparent;
+    border-radius: 50%;
+    isolation: isolate;
+}
+
+.rotating-border::before {
+    content: "";
+    position: absolute;
+    inset: -4px;
+    border-radius: inherit;
+    background: conic-gradient(transparent 20%, rgb(255, 217, 0));
+    animation: spin 3s linear infinite;
+    z-index: -1;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
 .banned-icon{
-    width: 40px;
-    height: 40px;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
     max-width: none;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-color: black;
 }

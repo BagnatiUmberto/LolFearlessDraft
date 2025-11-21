@@ -5,16 +5,15 @@ import "./BanSection.css"
 type Props = {
     teamSide: string | null
     champList: string[]
+    indexIconBorder: number | null
 }
 
-function BanSection({ teamSide, champList }: Props) {
+function BanSection({ teamSide, champList, indexIconBorder }: Props) {
 
     const setBackground = (champ: string) => {
         if (champ === "") {
             return {
-                backgroundImage: "none",
-                backgroundSize: "contain",
-                backgroundRepeat: "no-repeat"
+
             }
         }
         if (champ === "none") {
@@ -36,9 +35,10 @@ function BanSection({ teamSide, champList }: Props) {
     return (
         <div className="is-flex is-justify-content-space-between">
             {champList.map((champ, index) => (
-                <div key={"ban" + teamSide + index} className={`banned-icon ${teamSide === "red" ? "border-red" : "border-blue"}`}
-                    style={setBackground(champ)}>
+                <div key={"ban" + teamSide + index} className={`banned-icon-wrapper ${indexIconBorder === index ? "rotating-border" : ""}`}>
+                    <div className={`banned-icon ${teamSide === "red" ? "border-red" : "border-blue"}`} style={setBackground(champ)}></div>
                 </div>
+
             ))}
         </div>
     )

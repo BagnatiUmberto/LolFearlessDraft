@@ -7,21 +7,25 @@ type Props = {
   removedChamps: string[]
   bannedChamps: string[]
   preSelectedId: string | null
+  textFilter: string
   onClickHandle: (champ: string) => void
 };
 
-function ChampGrid({ availableChamps, removedChamps, bannedChamps, preSelectedId, onClickHandle }: Props) {
+function ChampGrid({ availableChamps, removedChamps, bannedChamps, preSelectedId, textFilter, onClickHandle }: Props) {
   const imgs_url = "https://ddragon.leagueoflegends.com/cdn/15.21.1/img/champion/";
+  console.log(textFilter)
 
   return (
     <>
-      <div className="grid">
+      <div className="champ-grid is-flex is-flex-wrap-wrap is-flex-1">
         {availableChamps.map((champ) => (
           <button
             key={champ}
             disabled={removedChamps.includes(champ) || bannedChamps.includes(champ) ? true : false}
-            className={`${removedChamps.includes(champ) || bannedChamps.includes(champ) ? "champ-card-removed" : "champ-card"} ${preSelectedId === champ ? "selected" : ""
-              }`}
+            className={`
+              ${removedChamps.includes(champ) || bannedChamps.includes(champ) ? "champ-card-removed" : "champ-card"} ${preSelectedId === champ ? "selected" : ""}
+              ${(champ.toLowerCase().includes(textFilter.toLowerCase()) || textFilter === "none") ? "" : "is-hidden"}
+              `}
             onClick={() => {
               onClickHandle(champ);
               playHoverSound();

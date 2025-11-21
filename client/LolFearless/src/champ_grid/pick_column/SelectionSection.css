@@ -1,6 +1,34 @@
-.selected-champ-icon-wrapper{
-    height: 80px;
+.champ-wrapper {
+    position: relative;
     width: 80px;
+    height: 80px;
     border-radius: 50%;
-    max-width: none;
+    border: 4px solid transparent;
+    isolation: isolate;
+}
+
+.rotating-border::before {
+    content: "";
+    position: absolute;
+    inset: -4px;
+    border-radius: inherit;
+    background: conic-gradient(transparent 20%, rgb(255, 217, 0));
+    animation: spin 3s linear infinite;
+    z-index: -1;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.selected-champ-icon {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-color: black;
 }

@@ -1,10 +1,9 @@
 main{
-    width: 100%
+    width: 100%;
+    flex: 1;
+    min-height: 0;
 }
 
-.main-content {
-  flex: 1; /* occupa tutto lo spazio disponibile */
-}
 
 #app{
     width: 100%;

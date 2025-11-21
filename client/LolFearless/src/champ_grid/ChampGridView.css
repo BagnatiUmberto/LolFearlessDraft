@@ -20,6 +20,11 @@
   color: white;
 }
 
+#timer-container h1{
+  margin: 0 auto;
+  transition: width 1s linear;
+}
+
 #search-input {
   background-color: rgba(240, 248, 255, 0);
   border: 1px solid rgba(255, 248, 168, 0.484);

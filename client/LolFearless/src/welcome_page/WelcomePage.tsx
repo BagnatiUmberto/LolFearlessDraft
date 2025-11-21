@@ -53,14 +53,15 @@ function WelcomePage() {
     */
     useEffect(() => {
         console.log("Use effect")
+        socket.connect()
+
         socket.on("connect", cmdCreateRoom)
 
         socket.on("roomCreated", onRoomCreated)
 
         return (() => {
-            console.log("Socket closed Wlcome page")
-            socket.off("connect", cmdCreateRoom)
-            socket.off("roomCreated", onRoomCreated)
+            socket.off()
+            socket.close()
         })
 
     }, [])
@@ -81,7 +82,7 @@ function WelcomePage() {
                         <input id="red-link-input" className=" input is-info" type="text" value={links.red} placeholder={links.red} readOnly={true} />
                     </div>
                     <div className="column is-1 is-flex is-justify-content-center is-align-items-center">
-                        <Link to={`/room/${roomId}/?team=red`} target="_blank">
+                        <Link to={`/room/${roomId}/?team=red`}>
                             <button>
                                 <FontAwesomeIcon icon="arrow-up-right-from-square" />
                             </button>
@@ -104,7 +105,7 @@ function WelcomePage() {
                         <input id="blue-link-input" className=" input is-info" type="text" value={links.blue} placeholder={links.blue} readOnly={true} />
                     </div>
                     <div className="column is-1 is-flex is-justify-content-center is-align-items-center">
-                        <Link to={`/room/${roomId}?team=blue`} target="_blank">
+                        <Link to={`/room/${roomId}?team=blue`}>
                             <button>
                                 <FontAwesomeIcon icon="arrow-up-right-from-square" />
                             </button>

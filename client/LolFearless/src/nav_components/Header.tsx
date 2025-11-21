@@ -6,18 +6,17 @@ function Header() {
     return (
         <header className="hero">
             <div className="hero-head">
-                <nav className="navbar">
-                    <div className="container">
-                        <div className="navbar-brand">
-                            <Link to="/" className="navbar-item">
-                                <img src={logo} alt="" />
-                            </Link>
-                        </div>
-                        <div className="navbar-end">
-                            <Link to="/settings" className="navbar-item">Settings</Link>
-                            <Link to="/contacts" className="navbar-item">Contacts</Link>
-                        </div>
+                <nav className="navbar is-flex is-justify-content-space-between">
+                    <div className="navbar-brand">
+                        <Link to="/" className="navbar-item">
+                            <img src={logo} alt="" />
+                        </Link>
                     </div>
+                    <div className="navbar-end">
+                        <Link to="/settings" className="navbar-item">Settings</Link>
+                        <Link to="/contacts" className="navbar-item">Contacts</Link>
+                    </div>
+
                 </nav>
             </div>
         </header>
