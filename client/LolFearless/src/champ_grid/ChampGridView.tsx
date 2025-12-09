@@ -1,16 +1,26 @@
 import { useState, useEffect } from "react"
 import { useSearchParams, useParams, Link } from "react-router-dom"
+import { socket } from "../socket"
+
 
 import "./ChampGridView.css"
 
 import ChampGrid from "./ChampGrid"
 import BanSection from "./pick_column/BanSection"
 import SelectionSection from "./pick_column/SelectionSection"
+
+//Sounds
 import start_sound from "../assets/sound/start_game.wav"
 import champ_sel_sound from "../assets/sound/champ_selected.mp3"
 import clock from "../assets/sound/clock.wav"
 
-import { socket } from "../socket"
+//Images
+import top_icon from "../assets/images/Top_icon.png"
+import mid_icon from "../assets/images/Middle_icon.png"
+import jungle_icon from "../assets/images/Jungle_icon.png"
+import bot_icon from "../assets/images/Bottom_icon.png"
+import supp_icon from "../assets/images/Support_icon.png"
+
 
 type Match = {
   numberOfGames: number
@@ -71,23 +81,32 @@ function ChampGridView() {
     phases: []
   })
 
-  const [selectedChamp, setSelectedChamp] = useState<string>("none")
-  const [playerReady, setPlayerReady] = useState<boolean>(false)
-
-  const [selectBtnDisabled, setSelectBtnDisabled] = useState<boolean>(false)
 
   const [searchParams] = useSearchParams()
   const { roomId } = useParams()
   const team = searchParams.get("team")
-  //Join error cases
-  const [roomFull, setRoomFull] = useState<boolean>(false)
-  const [roomError, setRoomError] = useState<boolean>(false)
-  const [alreadyJoined, setAlreadyJoined] = useState<boolean>(false)
+
+  //Interface elements states
+  const [selectedChamp, setSelectedChamp] = useState<string>("none")
+  const [playerReady, setPlayerReady] = useState<boolean>(false)
+  const [selectBtnDisabled, setSelectBtnDisabled] = useState<boolean>(false)
+  const [showRecap, setShowRecap] = useState<boolean>(true)
+
+  //Champ filters: role or name
   const [textFilter, setTextFilter] = useState<string>("none")
+  const [roleFilter, setRoleFilter] = useState<string[]>([])
+
+  //Index of the current selecting champ
   const [redBanIndex, setRedBanIndex] = useState<number | null>(null)
   const [blueBanIndex, setBlueBanIndex] = useState<number | null>(null)
   const [redPickIndex, setRedPickIndex] = useState<number | null>(null)
   const [bluePickIndex, setBluePickIndex] = useState<number | null>(null)
+
+  //Join error cases
+  const [roomFull, setRoomFull] = useState<boolean>(false)
+  const [roomError, setRoomError] = useState<boolean>(false)
+  const [alreadyJoined, setAlreadyJoined] = useState<boolean>(false)
+
 
   const baseUrl = window.location.origin
 
@@ -122,10 +141,28 @@ function ChampGridView() {
     }
   }, [model, playerReady, selectedChamp])
 
+  //Filter by name
   const filterChamps = (e: React.ChangeEvent<HTMLInputElement>) => {
     console.log(e.target.value)
     setTextFilter(e.target.value)
   }
+
+  //Filter by role
+  const filterByRole = (role: string) => {
+    setRoleFilter(prev => {
+      const copy = [...prev]
+      const index = copy.indexOf(role)
+      if (index == -1) {
+        copy.push(role)
+      }
+      else {
+        copy.splice(index, 1)
+      }
+      console.log(copy)
+      return copy
+    })
+  }
+
 
   //Set the rotating icon border on selecting champ
   useEffect(() => {
@@ -200,6 +237,7 @@ function ChampGridView() {
       // New Game reset
       if (_model.phaseType == "wait" && _model.match.currentGame > 0) {
         setPlayerReady(false)
+        setShowRecap(true)
       }
       if (_model.remainingTime < 10) {
         new Audio(clock).play()
@@ -228,8 +266,17 @@ function ChampGridView() {
     return (
       <>
         <div id="summoner-rift-bg" className="container is-fluid is-flex is-flex-direction-column">
-          <div className="columns is-vcentered">
-            <div id="role-filter" className="column is-4"></div>
+          <div className="is-flex">
+            <div id="role-filter" className="column is-4">
+              <div id="filter-icons-wrapper" className="is-flex is-justify-content-space-between">
+                <img src={top_icon} alt="" onClick={() => (filterByRole("top"))} className={roleFilter.includes("top") ? "role-filter-icon-light" : "role-filter-icon-dark"} />
+                <img src={mid_icon} alt="" onClick={() => (filterByRole("mid"))} className={roleFilter.includes("mid") ? "role-filter-icon-light" : "role-filter-icon-dark"} />
+                <img src={jungle_icon} alt="" onClick={() => (filterByRole("jungle"))} className={roleFilter.includes("jungle") ? "role-filter-icon-light" : "role-filter-icon-dark"} />
+                <img src={bot_icon} alt="" onClick={() => (filterByRole("adc"))} className={roleFilter.includes("adc") ? "role-filter-icon-light" : "role-filter-icon-dark"} />
+                <img src={supp_icon} alt="" onClick={() => (filterByRole("support"))} className={roleFilter.includes("support") ? "role-filter-icon-light" : "role-filter-icon-dark"} />
+              </div>
+
+            </div>
             <div id="timer-container" className="column has-text-centered">
               <h1 className={`is-size-4 ${model.activeTeam === "blue" ? "bg-blue" : "bg-red"}`} style={{ width: (model.remainingTime / model.turnTime) * 100 + '%' }}>
                 {model.phaseType === "ban" || model.phaseType === "pick" ? model.remainingTime : ""}
@@ -240,7 +287,7 @@ function ChampGridView() {
             </div>
           </div>
 
-          <div className="columns is-flex-1" style={{ "minHeight": 0 }}>
+          <div className="is-flex is-flex-1" style={{ "minHeight": 0 }}>
             <div id="hero-column" className="column is-flex is-flex-1 is-flex-direction-column">
               <h2>Your Team</h2>
               <BanSection
@@ -259,9 +306,9 @@ function ChampGridView() {
                 bannedChamps={model.red.bannedChamps.concat(model.blue.bannedChamps)}
                 preSelectedId={selectedChamp}
                 textFilter={textFilter}
+                roleFilter={roleFilter}
                 onClickHandle={(champ) => setSelectedChamp(champ)}
               />
-
             </div>
 
             <div id="opponent-column" className="column is-flex is-flex-direction-column">
@@ -286,7 +333,33 @@ function ChampGridView() {
             </button>
           </div>
 
+          <div className={`recap-container ${showRecap ? "" : "is-hidden"}`}>
+            <div id="row-close-btn">
+              <p id="close-btn" onClick={() => setShowRecap(false)}>X</p>
+            </div>
 
+            <div id="cards-row">
+              <div className="card_">
+                <div className="section">
+                  <h3 className="title font-red">Red Team</h3>
+                  <div>
+                    {model.red.pickedChamps.map((champ) => (
+                      <>
+                        <p>{champ}</p>
+                      </>
+                    ))}
+
+                  </div>
+                </div>
+              </div>
+
+              <div className="card_">
+                <div className="section">
+                  <h3 className="title font-blue">Blue Team</h3>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </>
     )
